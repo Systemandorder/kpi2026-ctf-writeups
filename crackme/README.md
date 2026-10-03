@@ -59,19 +59,19 @@ objdump -h crackme.exe
 
 ```mermaid
 flowchart TD
-    A[Запуск процесу] --> B[TLS callback 0x1400014d0<br/>reason == DLL_PROCESS_ATTACH]
-    B --> C[VirtualAlloc 0x1000, RW]
-    B --> D{IsDebuggerPresent?}
-    D -- ні --> E[ключ = 0x9e]
-    D -- так --> F[ключ = 0x61]
-    E --> G[XOR 32 байтів з .rdata 0x140009070]
+    A["Запуск процесу"] --> B["TLS callback 0x1400014d0<br/>reason == DLL_PROCESS_ATTACH"]
+    B --> C["VirtualAlloc 0x1000, RW"]
+    B --> D{"IsDebuggerPresent?"}
+    D -- ні --> E["ключ = 0x9e"]
+    D -- так --> F["ключ = 0x61"]
+    E --> G["XOR 32 байтів з .rdata 0x140009070"]
     F --> G
-    G --> H[VirtualProtect → PAGE_EXECUTE_READ]
-    H --> I[адреса → DAT_14000c030]
-    I --> J[main: перевірка довжини 41]
-    J --> K[цикл: f&#40;input i, i&#41; == ref i ?]
-    K -- всі збіглись --> L[Correct!]
-    K -- хоч один ні --> M[Wrong.]
+    G --> H["VirtualProtect → PAGE_EXECUTE_READ"]
+    H --> I["адреса → DAT_14000c030"]
+    I --> J["main: перевірка довжини 41"]
+    J --> K["цикл: f(input[i], i) == ref[i] ?"]
+    K -- всі збіглись --> L["Correct!"]
+    K -- хоч один ні --> M["Wrong."]
 ```
 
 ### TLS callback (`0x1400014d0`)

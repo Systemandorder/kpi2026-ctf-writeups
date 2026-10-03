@@ -98,22 +98,23 @@ cmovne r10d, eax            ; не збіглось, прапорець поми
 ```
 
 Крок 5. Відтворення алгоритму в псевдокоді. Переклавши опкоди у звичайний псевдокод, виходить такий ланцюжок на кожну позицію i.
+```text
 reg0 = 0
 reg2 = 66
 reg3 = 40
 
 цикл:
-reg1 = flag[reg0]
-reg1 = reg1 XOR reg2
-reg1 = reg1 * 29 (mod 256)
-reg1 = reg1 + 91 (mod 256)
-reg1 = rol8(reg1, 3)
-reg1 = reg1 XOR 0xA7
-порівняти reg1 з TABLE[reg0]
-reg2 = reg1
-reg0 += 1
-якщо (40 - reg0) != 0: повторити цикл
-
+  reg1 = flag[reg0]
+  reg1 = reg1 XOR reg2
+  reg1 = reg1 * 29 (mod 256)
+  reg1 = reg1 + 91 (mod 256)
+  reg1 = rol8(reg1, 3)
+  reg1 = reg1 XOR 0xA7
+  порівняти reg1 з TABLE[reg0]
+  reg2 = reg1
+  reg0 += 1
+  якщо (40 - reg0) != 0: повторити цикл
+```
 Крок 6. Витяг таблиці. Таблиця лежить за адресою `0x1400090a0`, 40 байтів.
 
 ```text

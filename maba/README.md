@@ -41,7 +41,7 @@ mba це консольна програма, яка перевіряє прап
 
 ---
 
-## 📚 Словник
+## 📚 Словничок для новачків
 
 | Термін | Простими словами |
 | --- | --- |
@@ -183,3 +183,84 @@ flowchart TD
 Розбиратися в тому, що саме рахує формула, не треба. Достатньо відтворити її інструкція за інструкцією, зберігаючи 32 бітну арифметику процесора, а потім перебрати всі символи.
 
 Усього виходить 41 помножити на 256, тобто 10 496 обчислень, і це відбувається миттєво.
+
+```python
+import struct
+import sys
+
+d = open(sys.argv[1], "rb").read()
+
+def rdata(va, n):
+    # секція .rdata, віртуальна адреса 0x140009000, зсув у файлі 0x7400
+    off = va - 0x140009000 + 0x7400
+    return d[off:off + n]
+
+table = struct.unpack("<41I", rdata(0x140009040, 41 * 4))
+M = 0xFFFFFFFF   # арифметика 32 бітна, як у процесорі
+
+def f(c, k):
+    # кожен рядок відповідає одній інструкції з дизасемблера
+    ecx = (c | k) & M                # or  ecx, r9d
+    eax = c & k                      # and eax, r9d
+    edi = (eax ^ 1) & 1              # xor edi, 1 ; and edi, 1
+    ebp = eax ^ 0xFFFFFFFE           # xor ebp, 0xfffffffe
+    edi = (ebp + edi * 2) & M        # lea edi, [rbp+rdi*2]
+    edx = ((c ^ k) & eax) & M        # xor edx, r9d ; and edx, eax
+    edx = (ecx + edx * 2) & M        # lea edx, [rcx+rdx*2]
+    edx = (edx + edi) & M            # add edx, edi
+    eax = (-eax) & M                 # neg eax
+    ebp = ecx & eax                  # and ebp, eax
+    eax ^= ecx                       # xor eax, ecx
+    ebp = (eax + ebp * 2) & M        # lea ebp, [rax+rbp*2]
+    ebp &= 0x7C                      # and ebp, 0x7c
+    ebp = (ebp + ebp) & M            # add ebp, ebp
+    eax = (edx ^ 0x7C) & ebp        # xor eax, 0x7c ; and eax, ebp
+    edx ^= ebp                       # xor edx, ebp
+    edx ^= 0x7C                      # xor edx, 0x7c
+    edx = (edx + eax * 2) & M        # lea edx, [rdx+rax*2]
+    edx |= 0x35                      # or  edx, 0x35
+    eax = ecx & edi                  # and eax, edi
+    ecx ^= edi                       # xor ecx, edi
+    eax = (ecx + eax * 2) & M        # lea eax, [rcx+rax*2]
+    eax ^= 0x7C                      # xor eax, 0x7c
+    eax = (eax + ebp) & M            # add eax, ebp
+    eax &= 0x35                      # and eax, 0x35
+    edx = (edx - eax) & M            # sub edx, eax
+    return edx & 0xFF                # movzx eax, dl
+
+flag = bytearray()
+for i in range(41):
+    k = 47 * i
+    hits = [c for c in range(256) if f(c, k) == table[i]]
+    assert len(hits) == 1, (i, hits)
+    flag.append(hits[0])
+
+print(flag.decode())
+```
+
+```bash
+python solve.py mba.exe
+```
+
+Для кожної з 41 позиції знайшлося рівно одне значення байта, тож розв'язок єдиний. Перевірка показала, що для кожного ключа функція дає різні результати на всіх 256 вхідних байтах, тобто це бієкція.
+
+---
+
+## 🏁 Прапор
+
+```text
+kpi2026{m1x3d_b00l34n_4r1thm3t1c_unf0lds}
+```
+
+Прапор натякає на головне. Змішана булева арифметика розгортається, якщо діяти механічно.
+
+---
+
+## 📚 Висновки
+
+- Довгий ланцюжок бітових операцій не означає складну задачу. Якщо його можна відтворити, його можна й обчислити.
+- Не обов'язково розуміти, що рахує MBA вираз. Достатньо точно повторити, як він рахує, інструкція за інструкцією.
+- Незалежна перевірка кожного символа руйнує всю складність. Замість 256 в сорок першому степені варіантів лишається 41 помножити на 256.
+- У відтворенні важливо зберігати 32 бітну поведінку, тобто накладати маску після кожного додавання, віднімання та зміни знака.
+- Таблиця може зберігатись не байтами, а чотирибайтовими числами. Це видно за множником 4 в `cmp DWORD PTR [rsi+r8*4]`.
+- Якщо потрібно справді спростити такий вираз, існують спеціальні інструменти, але для цього завдання перебору достатньо.
